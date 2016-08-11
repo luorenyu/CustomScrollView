@@ -8,6 +8,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.ScrollView;
 import android.widget.Scroller;
 
@@ -38,12 +40,11 @@ public class CustomScrollView extends ViewGroup {
 
     private void init() {
         WindowManager wm= (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-
         mScreenHeight=wm.getDefaultDisplay().getHeight();
         mScroller = new Scroller(getContext());
     }
 
-    //在onMeasure中测量子view
+    //step1:在onMeasure中测量子view
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -54,6 +55,7 @@ public class CustomScrollView extends ViewGroup {
         }
     }
 
+    //step2:定位子view的位置
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         realChildCount = 0;
@@ -83,6 +85,7 @@ public class CustomScrollView extends ViewGroup {
         }
     }
 
+    //step3：增添我们需要的触摸响应事件
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         //在这个触摸事件中，需要判断两个距离，一个是手指移动的距离一个是view滚动的距离
@@ -100,15 +103,15 @@ public class CustomScrollView extends ViewGroup {
                     mScroller.abortAnimation();
                 }
                 int dY= mLastY -y;
-                //判断滚动的距离不超出上下边缘的限制
+                //滚动触碰到上边缘时一给个下拉反弹的效果
                 if(getScrollY()<0){
+                   dY/=3;
+                }
+                //判断滚动的
+                if(getScrollY()>mScreenHeight*realChildCount-mScreenHeight){
                     dY=0;
                 }
-                int getScrollY=getScrollY();
-                int height = getHeight();
-                if(getScrollY()>mScreenHeight*realChildCount-mScreenHeight){
-                   dY=0;
-                }
+
                 //让我们的view滚动相应的dy距离
                 scrollBy(0,dY);
                 mLastY=y;
@@ -116,21 +119,30 @@ public class CustomScrollView extends ViewGroup {
             case MotionEvent.ACTION_UP:
                 mEnd = getScrollY();
                 int dScrollY = mEnd - mStartY;
-                if(dScrollY>0){//向上滚动的情框
-                    if (dScrollY<mScreenHeight/3){
+                if(dScrollY>0){//向上滚动的情况
+                    if(getScrollY()<0){
                         mScroller.startScroll(0,getScrollY(),0,-dScrollY);
                     }else{
-                        mScroller.startScroll(0,getScrollY(),0,mScreenHeight-dScrollY);
+                        if (dScrollY<mScreenHeight/3){
+                            mScroller.startScroll(0,getScrollY(),0,-dScrollY);
+                        }else{
+                            mScroller.startScroll(0,getScrollY(),0,mScreenHeight-dScrollY);
+                        }
                     }
-                }else{//向下滚动的情框
-                    if(-dScrollY<mScreenHeight/3){
+                }else{//向下滚动的情况
+                    if(getScrollY()>mScreenHeight*realChildCount-mScreenHeight){
                         mScroller.startScroll(0,getScrollY(),0,-dScrollY);
                     }else{
-                        mScroller.startScroll(0,getScrollY(),0,-mScreenHeight-dScrollY);
+                        if(-dScrollY<mScreenHeight/3){
+                            mScroller.startScroll(0,getScrollY(),0,-dScrollY);
+                        }else {
+                            mScroller.startScroll(0, getScrollY(), 0, -mScreenHeight - dScrollY);
+                        }
                     }
                 }
                 break;
         }
+        //千万不要忘记写该方法，不然前面的一切代码都是无效的
         postInvalidate();
         return true;
     }

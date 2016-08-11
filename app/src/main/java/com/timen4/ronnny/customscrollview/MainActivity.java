@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView() {
+        //step4：初始化我们自定义的scrollview并填充数据数据
         mainView = (RelativeLayout) findViewById(R.id.main);
         CustomScrollView customScrollView = (CustomScrollView) findViewById(R.id.csv);
         WindowManager wm= (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
