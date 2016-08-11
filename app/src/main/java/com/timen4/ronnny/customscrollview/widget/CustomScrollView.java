@@ -3,6 +3,7 @@ package com.timen4.ronnny.customscrollview.widget;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,9 @@ public class CustomScrollView extends ViewGroup {
     private int mStartY;
     private int mEnd;
     private Scroller mScroller;
+    private int mLastY;
+    private int childCount;
+    private int realChildCount;
 
     public CustomScrollView(Context context) {
         this(context,null);
@@ -52,16 +56,18 @@ public class CustomScrollView extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        int childCount = getChildCount();
+        realChildCount = 0;
+        childCount = getChildCount();
         //set the ViewGroup's height
         MarginLayoutParams lp = (MarginLayoutParams) getLayoutParams();
 
-        lp.height=mScreenHeight*childCount;
+        lp.height=mScreenHeight* childCount;
         setLayoutParams(lp);
         //绘制子view的位置
-        for (int i=0;i<childCount;i++){
+        for (int i = 0; i< childCount; i++){
             View childView = getChildAt(i);
             if(childView.getVisibility()!=View.GONE){
+                realChildCount++;
                 childView.layout(l,i*mScreenHeight,r,(i+1)*mScreenHeight);
             }
         }
@@ -79,25 +85,33 @@ public class CustomScrollView extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        //在这个触摸事件中，需要判断两个距离，一个是手指移动的距离一个是view滚动的距离
+        //这是随着手指的移动会发送改变的量
         int y = (int) event.getY();
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                mStartY = y;
+                mLastY = y;
+                mStartY = getScrollY();
+
+                break;
+            case MotionEvent.ACTION_MOVE:
                 //当我们再次触碰屏幕时，如果之前的滚动动画还没有停止，我们也让他立即停止
                 if(!mScroller.isFinished()){
                     mScroller.abortAnimation();
                 }
-                break;
-            case MotionEvent.ACTION_MOVE:
-
-                int dY= mStartY -y;
+                int dY= mLastY -y;
                 //判断滚动的距离不超出上下边缘的限制
-                if(getScrollY()<0||getScrollY()>getHeight()-mScreenHeight){
+                if(getScrollY()<0){
                     dY=0;
+                }
+                int getScrollY=getScrollY();
+                int height = getHeight();
+                if(getScrollY()>mScreenHeight*realChildCount-mScreenHeight){
+                   dY=0;
                 }
                 //让我们的view滚动相应的dy距离
                 scrollBy(0,dY);
-
+                mLastY=y;
                 break;
             case MotionEvent.ACTION_UP:
                 mEnd = getScrollY();
@@ -117,7 +131,7 @@ public class CustomScrollView extends ViewGroup {
                 }
                 break;
         }
-
-        return super.onTouchEvent(event);
+        postInvalidate();
+        return true;
     }
 }
