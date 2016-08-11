@@ -52,6 +52,21 @@ public class CustomScrollView extends ViewGroup {
             View childView = getChildAt(i);
             measureChild(childView,widthMeasureSpec,heightMeasureSpec);
         }
+
+//        measureChildren(widthMeasureSpec,heightMeasureSpec);
+//        //自己支持wrap_content
+//        int widthSpaceSize = MeasureSpec.getSize(widthMeasureSpec);
+//        int widthSpaceMode = MeasureSpec.getMode(widthMeasureSpec);
+//        int heightSpaceSize = MeasureSpec.getSize(heightMeasureSpec);
+//        int heightSpaceMode = MeasureSpec.getMode(heightMeasureSpec);
+//
+//        if (childCount==0){
+//            setMeasuredDimension(0,0);
+//        }else if(widthSpaceMode==MeasureSpec.AT_MOST&&heightSpaceMode==MeasureSpec.AT_MOST){
+//
+//        }
+//
+//        setMeasuredDimension();
     }
 
     @Override
@@ -86,11 +101,12 @@ public class CustomScrollView extends ViewGroup {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         //在这个触摸事件中，需要判断两个距离，一个是手指移动的距离一个是view滚动的距离
-        //这是随着手指的移动会发送改变的量
+        //这就是随着手指的移动会发送改变的量
         int y = (int) event.getY();
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
                 mLastY = y;
+                //这是view滚动的距离
                 mStartY = getScrollY();
 
                 break;
@@ -100,12 +116,11 @@ public class CustomScrollView extends ViewGroup {
                     mScroller.abortAnimation();
                 }
                 int dY= mLastY -y;
-                //判断滚动的距离不超出上下边缘的限制
+                //当滚动时触及到上边缘时，我们增加一个回弹的效果
                 if(getScrollY()<0){
-                    dY=0;
+                    dY/=3;
                 }
-                int getScrollY=getScrollY();
-                int height = getHeight();
+                //如果是下边缘，我们不让它继续向下滚动
                 if(getScrollY()>mScreenHeight*realChildCount-mScreenHeight){
                    dY=0;
                 }
@@ -116,13 +131,13 @@ public class CustomScrollView extends ViewGroup {
             case MotionEvent.ACTION_UP:
                 mEnd = getScrollY();
                 int dScrollY = mEnd - mStartY;
-                if(dScrollY>0){//向上滚动的情框
-                    if (dScrollY<mScreenHeight/3){
+                if(dScrollY>0){//向上滚动的情况
+                    if (dScrollY<mScreenHeight/3||getScrollY()<0){
                         mScroller.startScroll(0,getScrollY(),0,-dScrollY);
                     }else{
                         mScroller.startScroll(0,getScrollY(),0,mScreenHeight-dScrollY);
                     }
-                }else{//向下滚动的情框
+                }else{//向下滚动的情况
                     if(-dScrollY<mScreenHeight/3){
                         mScroller.startScroll(0,getScrollY(),0,-dScrollY);
                     }else{
